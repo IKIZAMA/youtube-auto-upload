@@ -1,7 +1,7 @@
 name: Schedule Test
 on:
   schedule:
-    - cron: '*/5 * * * *'  # 5分おきに実行（テスト用）
+    - cron: '*/1 * * * *'  # 5分おきに実行（テスト用）
   workflow_dispatch:
 jobs:
   test:

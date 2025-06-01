@@ -24,20 +24,33 @@ jobs:
       - name: Install system dependencies (ImageMagick)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y imagemagick imagemagick-dev
+          # imagemagick-dev が見つからない場合があるため、libmagickwand-dev を試す
+          # これが imagemagick とその開発ファイルを含むことが多い
+          sudo apt-get install -y imagemagick libmagickwand-dev
           # ImageMagickのポリシー設定を修正 (PDF/動画処理を許可)
           # パスが環境によって異なる可能性があるので、いくつかの一般的なパスを試す
-          POLICY_FILES=("/etc/ImageMagick-6/policy.xml" "/etc/ImageMagick/policy.xml")
+          POLICY_FILES=("/etc/ImageMagick-6/policy.xml" "/etc/ImageMagick/policy.xml" "/usr/local/etc/ImageMagick-6/policy.xml") # 一般的なパスを追加
+          POLICY_UPDATED=false
           for policy_file in "${POLICY_FILES[@]}"; do
             if [ -f "$policy_file" ]; then
               echo "Updating ImageMagick policy: $policy_file"
+              # sedコマンドのエラーを避けるため、ファイルが存在する場合のみ実行し、sudoで実行
               sudo sed -i 's/rights="none" pattern="PDF"/rights="read|write" pattern="PDF"/' "$policy_file"
               sudo sed -i 's/rights="none" pattern="PS"/rights="read|write" pattern="PS"/' "$policy_file"
               sudo sed -i 's/rights="none" pattern="EPS"/rights="read|write" pattern="EPS"/' "$policy_file"
               sudo sed -i 's/rights="none" pattern="XPS"/rights="read|write" pattern="XPS"/' "$policy_file"
-              # 必要に応じて他のパターンも追加
-              break
+              # SVGとVIDEOも追加（MoviePyで使われる可能性があるため）
+              sudo sed -i 's/rights="none" pattern="SVG"/rights="read|write" pattern="SVG"/' "$policy_file"
+              sudo sed -i 's/rights="none" pattern="VIDEO"/rights="read|write" pattern="VIDEO"/' "$policy_file"
+              POLICY_UPDATED=true
+              break 
             fi
+          done
+          if [ "$POLICY_UPDATED" = false ]; then
+            echo "Warning: No ImageMagick policy file found to update. This might cause issues with PDF/video processing."
+            # ここでエラーとして終了させることも検討できます。
+            # exit 1
+          fi
           done
 
 

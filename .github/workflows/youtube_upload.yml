@@ -62,17 +62,21 @@ jobs:
           pip list # インストールされたパッケージ一覧を表示
 
       - name: Create credentials.json from Secret
-        run: echo "${{ secrets.CREDENTIALS_JSON }}" > credentials.json
+        env:
+          CREDENTIALS_JSON_CONTENT: ${{ secrets.CREDENTIALS_JSON }}
+        run: printf "%s" "$CREDENTIALS_JSON_CONTENT" > credentials.json
 
       - name: Create youtube_token.json from Secret
-        run: echo "${{ secrets.YOUTUBE_TOKEN_JSON }}" > youtube_token.json
+        env:
+          TOKEN_JSON_CONTENT: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+        run: printf "%s" "$TOKEN_JSON_CONTENT" > youtube_token.json
       
       - name: Run YouTube upload script
         env:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           PYTHONIOENCODING: "utf-8"
-          # PYTHONPATH: ${{ env.PYTHONPATH }} # GITHUB_ENVから自動的に設定されるはずだが念のため
+          # PYTHONPATH は $GITHUB_ENV 経由で次のステップに引き継がれる
         run: |
           echo "Current PYTHONPATH: $PYTHONPATH" # PYTHONPATHの内容を表示
           python main.py

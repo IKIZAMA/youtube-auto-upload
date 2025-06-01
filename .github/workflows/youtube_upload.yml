@@ -1,0 +1,68 @@
+# .github/workflows/youtube_upload.yml
+name: YouTube Auto Upload
+
+on:
+  schedule:
+    # UTC（協定世界時）で指定します。日本時間(JST)はUTC+9時間です。
+    # 例: 毎日 日本時間の午前8時と午後8時に実行 (UTCで前日の23時と当日の11時)
+    - cron: '0 23 * * *' # UTC 23:00 (JST 08:00)
+    - cron: '0 11 * * *' # UTC 11:00 (JST 20:00)
+  workflow_dispatch: # GitHub UIから手動で実行できるようにする
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' # スクリプトに適合するPythonバージョンを指定
+
+      - name: Install system dependencies (ImageMagick)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y imagemagick imagemagick-dev
+          # ImageMagickのポリシー設定を修正 (PDF/動画処理を許可)
+          # パスが環境によって異なる可能性があるので、いくつかの一般的なパスを試す
+          POLICY_FILES=("/etc/ImageMagick-6/policy.xml" "/etc/ImageMagick/policy.xml")
+          for policy_file in "${POLICY_FILES[@]}"; do
+            if [ -f "$policy_file" ]; then
+              echo "Updating ImageMagick policy: $policy_file"
+              sudo sed -i 's/rights="none" pattern="PDF"/rights="read|write" pattern="PDF"/' "$policy_file"
+              sudo sed -i 's/rights="none" pattern="PS"/rights="read|write" pattern="PS"/' "$policy_file"
+              sudo sed -i 's/rights="none" pattern="EPS"/rights="read|write" pattern="EPS"/' "$policy_file"
+              sudo sed -i 's/rights="none" pattern="XPS"/rights="read|write" pattern="XPS"/' "$policy_file"
+              # 必要に応じて他のパターンも追加
+              break
+            fi
+          done
+
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create credentials.json from Secret
+        run: echo "${{ secrets.CREDENTIALS_JSON }}" > credentials.json
+
+      - name: Create youtube_token.json from Secret
+        run: echo "${{ secrets.YOUTUBE_TOKEN_JSON }}" > youtube_token.json
+      
+      - name: Run YouTube upload script
+        env:
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+          # Pythonの文字化け対策 (必要に応じて)
+          PYTHONIOENCODING: "utf-8" 
+        run: python main.py
+
+      - name: Clean up temporary files
+        if: always() # 常に実行 (成功時も失敗時も)
+        run: |
+          rm -f credentials.json youtube_token.json
+          rm -rf generated_videos # 生成された動画を削除
+          echo "Temporary files cleaned up."

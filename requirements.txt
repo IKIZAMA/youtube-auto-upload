@@ -1,0 +1,13 @@
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+moviepy
+Pillow
+requests
+beautifulsoup4
+gtts
+pydub
+librosa
+soundfile
+numpy
+Wand

@@ -56,6 +56,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          # インストールされたライブラリのパスを明示的に追加 (デバッグ用)
+          echo "PYTHONPATH=$(python -m site --user-site):$PYTHONPATH" >> $GITHUB_ENV
+          echo "Installed packages:"
+          pip list # インストールされたパッケージ一覧を表示
 
       - name: Create credentials.json from Secret
         run: echo "${{ secrets.CREDENTIALS_JSON }}" > credentials.json
@@ -67,9 +71,11 @@ jobs:
         env:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
-          # Pythonの文字化け対策 (必要に応じて)
-          PYTHONIOENCODING: "utf-8" 
-        run: python main.py
+          PYTHONIOENCODING: "utf-8"
+          # PYTHONPATH: ${{ env.PYTHONPATH }} # GITHUB_ENVから自動的に設定されるはずだが念のため
+        run: |
+          echo "Current PYTHONPATH: $PYTHONPATH" # PYTHONPATHの内容を表示
+          python main.py
 
       - name: Clean up temporary files
         if: always() # 常に実行 (成功時も失敗時も)

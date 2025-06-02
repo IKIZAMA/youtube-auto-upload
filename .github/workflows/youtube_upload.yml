@@ -3,7 +3,6 @@
 name: YouTube Auto Upload
 
 on:
-  schedule:
   workflow_dispatch: # GitHub UIから手動で実行できるようにする
 
 jobs:

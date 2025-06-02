@@ -6,8 +6,7 @@ on:
   schedule:
     # UTC（協定世界時）で指定します。日本時間(JST)はUTC+9時間です。
     # 例: 毎日 日本時間の午前8時と午後8時に実行 (UTCで前日の23時と当日の11時)
-    - cron: '7 0 * * *' # UTC 23:17 (JST 08:17)
-    - cron: '47 11 * * *' # UTC 11:47 (JST 20:47)
+    - cron: '*/1 * * * *'
   workflow_dispatch: # GitHub UIから手動で実行できるようにする
 
 jobs:
